@@ -1,0 +1,94 @@
+version: '3'
+services:
+  # start:meta
+  lb:
+    build: ./meta/lb
+    depends_on:
+      - kv
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      SERVICE_NAME: nginx
+      SERVICE_TAGS: nginx,frontend,meta,v1
+      APP_HOSTNAME: nxtonic.local
+    networks:
+      - frontend
+      - meta
+    volumes:
+      - ./meta/lb/config:/code
+      - ./meta/lb/data:/var/log/nginx
+  kv:
+    image: consul:latest
+    command: consul agent -config-file=/kv/consul.json -data-dir=/consul/data
+    restart: always
+    container_name: kv
+    ports:
+      - 8500:8500
+    environment:
+      SERVICE_NAME: consul
+      SERVICE_TAGS: consul,meta
+      SERVICE_8300_IGNORE: "true"
+      SERVICE_8301_IGNORE: "true"
+      SERVICE_8302_IGNORE: "true"
+      SERVICE_8500_IGNORE: "true"
+      SERVICE_8600_IGNORE: "true"
+    networks:
+      - meta
+    volumes:
+      - ./meta/kv/config:/kv/
+  sd:
+    image: gliderlabs/registrator:latest
+    command: -internal -ip=0.0.0.0 consul://kv:8500
+    restart: always
+    container_name: sd
+    depends_on:
+      - kv
+    networks:
+      - meta
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock
+  # end:meta
+
+  # start:frontend
+  ui:
+    build: ./frontend/ui
+    command: nodemon ./server.js
+    environment:
+      SERVICE_NAME: web-ui
+      SERVICE_TAGS: ui,frontend,v1
+    networks:
+      - frontend
+    volumes:
+      - ./frontend/ui/src:/app
+  api:
+    build: ./backend/api
+    environment:
+      SERVICE_NAME: web-api
+      SERVICE_TAGS: api,frontend,v1
+    networks:
+      - frontend
+    volumes:
+      - ./frontend/api/src:/app
+  # end:frontend
+
+  # start:backend
+  db:
+    image: postgres:latest
+    environment:
+      SERVICE_NAME: database
+      SERVICE_TAGS: db,backend,v1
+    networks:
+      - backend
+    volumes:
+      - ./backend/db/config:/etc/postgresql
+      - ./backend/db/data:/var/lib/postgresql/data
+  # end:backend
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+  meta:
+    driver: bridge

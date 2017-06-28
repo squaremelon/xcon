@@ -1,0 +1,14 @@
+{
+  "name": "ui",
+  "version": "0.0.0-pre",
+  "description": "",
+  "main": "./src/server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Angus McMillan <nxtonic@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.15.3"
+  }
+}
