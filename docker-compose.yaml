@@ -66,11 +66,11 @@ services:
     build: ./backend/api
     environment:
       SERVICE_NAME: web-api
-      SERVICE_TAGS: api,frontend,v1
+      SERVICE_TAGS: api,backend,v1
     networks:
       - frontend
     volumes:
-      - ./frontend/api/src:/app
+      - ./backend/api/src:/go/src/github.com/user/project/app
   # end:frontend
 
   # start:backend

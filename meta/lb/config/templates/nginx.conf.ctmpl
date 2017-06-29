@@ -8,15 +8,17 @@ http {
   upstream ui { {{range service "web-ui"}}
     server {{.Address}}:{{.Port}};{{else}}server 127.0.0.1;{{end}}
   }
-  # upstream api { {{range service "web-api"}}
-  #   server {{.Address}}:{{.Port}};{{else}}server 127.0.0.1;{{end}}
-  # }
+  upstream api { {{range service "web-api"}}
+    server {{.Address}}:{{.Port}};{{else}}server 127.0.0.1;{{end}}
+  }
 
   log_format compression '$remote_addr - $remote_user [$time_local] '
-                         '"$request" $status $body_bytes_sent '
+                         '$host "$request" $status $body_bytes_sent '
                          '"$http_referer" "$http_user_agent" "$gzip_ratio"';
 
-  access_log /var/log/nginx/access.log compression;
+  log_format supercombined '$remote_addr - $remote_user [$time_local] $host "$request" $status $request_time $body_bytes_sent "$http_referer" "$http_user_agent" ';
+
+  access_log /var/log/nginx/access.log supercombined;
 
   server {
     listen 80 default_server;
@@ -42,13 +44,13 @@ http {
     }
   }
 
-  # server {
-  #   listen 80;
-  #   server_name api.localhost;
-  #
-  #   location / {
-  #     proxy_buffering off;
-  #     proxy_pass http://api:8080/;
-  #   }
-  # }
+  server {
+    listen 80;
+    server_name api.localhost;
+
+    location / {
+      proxy_buffering off;
+      proxy_pass http://api;
+    }
+  }
 }
